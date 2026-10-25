@@ -297,6 +297,8 @@ If you're using another sensor (rotation sensor, adi encoder, etc) to measure th
 
 If you're using a rotation sensor, divide the value by 100.0!  It reads in centidegrees, so it will read 36,000 instead of 360.  
 
+:::
+
 ### Toggling PID Off
 Sometimes you want to take manual control of the lift and hand it back to PID later.  A common setup is holding L1/L2 to drive the lift by hand, then pressing a button to send it to a preset position with PID.  
 
