@@ -297,4 +297,53 @@ If you're using another sensor (rotation sensor, adi encoder, etc) to measure th
 
 If you're using a rotation sensor, divide the value by 100.0!  It reads in centidegrees, so it will read 36,000 instead of 360.  
 
+### Toggling PID Off
+Sometimes you want to take manual control of the lift and hand it back to PID later.  A common setup is holding L1/L2 to drive the lift by hand, then pressing a button to send it to a preset position with PID.  
+
+The idea is a flag that tells the lift task to stop computing PID while the driver is in control.  This builds on the [Task](#task) section above, so the task is what we pause.  
+```cpp
+bool manual_lift_control = false;
+```
+
+In `opcontrol()`, L1 and L2 move the lift directly and turn the flag on.  Pressing X turns the flag off and sets a new PID target, which gives control back to the task.  
+```cpp
+void opcontrol() {
+  while (true) {
+    if (master.get_digital(DIGITAL_L1)) {
+      set_lift(127);
+      manual_lift_control = true;
+    }
+    else if (master.get_digital(DIGITAL_L2)) {
+      set_lift(-127);
+      manual_lift_control = true;
+    }
+    else if (manual_lift_control) {
+      set_lift(0);
+    }
+
+    if (master.get_digital_new_press(DIGITAL_X)) {
+      manual_lift_control = false;
+      liftPID.target_set(800);
+    }
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+```
+
+The lift task skips the PID calculation while the flag is on.  This way the task and `opcontrol()` never fight over the motors.  
+```cpp
+void lift_task() {
+  pros::delay(2000); 
+  while (true) {
+    if (!manual_lift_control) {
+      set_lift(liftPID.compute(l_lift.get_position()));
+    }
+
+    pros::delay(ez::util::DELAY_TIME);
+  }
+}
+pros::Task Lift_Task(lift_task); 
+```
+
 :::
